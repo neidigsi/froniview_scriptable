@@ -1,12 +1,10 @@
-const APPEARANCE = 'dark'
-
 const lineWeight = 2
 const targetLineWeight = .5
 const targetLineColor = Color.green()
 const currentLineColor = Color.yellow()
 const summedLineColor = Color.orange()
 
-const baseUrl = "http://192.168.178.65"
+const baseUrl = "http://yourUrl.com"
 const user = "yourName"
 const passwort = "yourPassword"
 const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
@@ -43,7 +41,7 @@ async function createWidget(items) {
         const list = new ListWidget()
         const date = new Date()
 
-        if (APPEARANCE === 'dark') {
+        if (Device.isUsingDarkAppearance()) {
             drawContext.setTextColor(Color.white())
         }
         else {
@@ -67,21 +65,18 @@ async function createWidget(items) {
         drawContext.setTextAlignedCenter()
 
         // Target Line
-        const heighestTargetValue = getHeighestTargetValue()
-        let target = targetValues[date.getMonth()] / heighestTargetValue
-
-        let targetPoint1 = new Point(50 , graphLow - (graphHeight * target))
-        let targetPoint2 = new Point(670 , graphLow - (graphHeight * target))
+        let targetPoint1 = new Point(50 , graphLow - (graphHeight * 0.5))
+        let targetPoint2 = new Point(670 , graphLow - (graphHeight * 0.5))
 
         drawLine(targetPoint1, targetPoint2, targetLineWeight, targetLineColor)
 
         for (let i = 0; i < json.values.length - 1; i++) {
             // Summed line
             let summedX1 = spaceBetweenPoints * i + 50
-            let summedY1 = json.values[i].sum_of_values / heighestTargetValue
+            let summedY1 = json.values[i].sum_of_values / (targetValues[date.getMonth()] * 2)
 
             let summedX2 = spaceBetweenPoints * (i + 1) + 50
-            let summedY2 = json.values[i + 1].sum_of_values / heighestTargetValue
+            let summedY2 = json.values[i + 1].sum_of_values / (targetValues[date.getMonth()] * 2)
 
             let summedPoint1 = new Point(summedX1, graphLow - (graphHeight * summedY1))
             let summedPoint2 = new Point(summedX2, graphLow - (graphHeight * summedY2))
@@ -105,18 +100,6 @@ async function createWidget(items) {
     }
 }
 
-function getHeighestTargetValue() {
-    let res = targetValues[0]
-
-    targetValues.forEach(value => {
-        if (value > res) {
-            res = value
-        }
-    })
-
-    return 2 * res
-}
-
 async function getJWT() {
     let req = new Request(baseUrl + "/user/login?mail=" + user + "&password=" + passwort)
     req.method = 'POST'
@@ -130,12 +113,6 @@ function getDayRequestUrl() {
     let res = baseUrl + "/day?day=" + date.getDate() + "&month=" + (date.getMonth() + 1) + "&year=" + date.getFullYear()
 
     return res
-}
-
-function drawTextR(text, rect, color, font) {
-    drawContext.setFont(font)
-    drawContext.setTextColor(color)
-    drawContext.drawTextInRect(new String(text).toString(), rect)
 }
 
 function drawLine(point1, point2, width, color) {
