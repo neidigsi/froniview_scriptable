@@ -1,19 +1,20 @@
 const APPEARANCE = 'dark';
 
 const lineWeight = 2;
-const vertLineWeight = .5;
-const accentColor1 = new Color('#33cc33', 1);
-const accentColor2 = Color.lightGray();
+const accentColor1 = Color.yellow()
+const accentColor2 = Color.lightGray()
 
-const baseUrl = "192.168.178.65"
+const baseUrl = "http://192.168.178.65"
 const user = "yourName"
 const passwort = "yourPassword"
-const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-const widgetHeight = 338;
-const widgetWidth = 720;
-const graphLow = 280;
-const graphHeight = 160;
-const spaceBetweenDays = 1;
+const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
+const targetValues = [] // your target values in Wh for each month as array with length 12
+const maxPower // your maximum power output in W
+const widgetHeight = 338
+const widgetWidth = 720
+const graphLow = 280
+const graphHeight = 160
+const spaceBetweenPoints = 3.23
 
 let drawContext = new DrawContext();
 drawContext.size = new Size(widgetWidth, widgetHeight);
@@ -39,7 +40,6 @@ async function createWidget(items) {
         const values = json.values;
         const list = new ListWidget();
         const date = new Date();
-        const minDate = ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + '-' + date.getFullYear();
 
         if (APPEARANCE === 'dark') {
             drawContext.setTextColor(Color.white());
@@ -47,35 +47,36 @@ async function createWidget(items) {
         else {
             drawContext.setTextColor(Color.black());
         }
-        drawContext.setFont(Font.mediumSystemFont(26));
+
+        let gesKwh = json.total / 1000
+        let reachedTarget = json.total / targetValues[date.getMonth()]
+
+        drawContext.setFont(Font.mediumSystemFont(26))
         drawContext.drawText('☀️ Froniview'.toUpperCase()
             + ' | '
             + date.getDate() + ". "
             + months[date.getMonth()] + " "
             + date.getFullYear()
-            , new Point(25, 25));
+            + ' | '
+            + gesKwh + " kWh ≈ "
+            + reachedTarget + " %"
+            , new Point(25, 25))
 
-        drawContext.setTextAlignedCenter();
+        drawContext.setTextAlignedCenter()
 
 
         for (let i = 0; i < json.values.length; i++) {
+            // Current production value
+            let x1 = spaceBetweenPoints * i + 50
+            let y1 = json.values[i].value / maxPower
+            
+            let x2 = spaceBetweenPoints * (i + 1) + 50
+            let y2 = json.values[i + 1].value / maxPower
 
-            // Vertical Line
-            const point1 = new Point(spaceBetweenDays * i + 50, graphLow + values[i].value);
-            const point2 = new Point(spaceBetweenDays * i + 50, graphLow);
-            drawLine(point1, point2, vertLineWeight, accentColor2);
+            let point1 = new Point(x1, graphLow - (graphHeight * y1));
+            let point2 = new Point(x2, graphLow - (graphHeight * y2));
 
-            let dayColor;
-
-            if (dayOfWeek == 0 || dayOfWeek == 6) {
-                dayColor = accentColor2;
-            }
-            else if (APPEARANCE === 'dark') {
-                dayColor = Color.white();
-            }
-            else {
-                dayColor = Color.black();
-            }
+            drawLine(point1, point2, lineWeight, accentColor1);
         }
 
         return list;
