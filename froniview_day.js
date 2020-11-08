@@ -3,8 +3,8 @@ const APPEARANCE = 'dark'
 const lineWeight = 2
 const targetLineWeight = .5
 const targetLineColor = Color.green()
-const accentColor1 = Color.yellow()
-const accentColor2 = Color.lightGray()
+const currentLineColor = Color.yellow()
+const summedLineColor = Color.orange()
 
 const baseUrl = "http://192.168.178.65"
 const user = "yourName"
@@ -50,7 +50,7 @@ async function createWidget(items) {
             drawContext.setTextColor(Color.black())
         }
 
-        let gesKwh = Math.rount(json.total / 10) / 100
+        let gesKwh = Math.round(json.total / 10) / 100
         let reachedTarget = Math.round((json.total / targetValues[date.getMonth()]) * 100)
 
         drawContext.setFont(Font.mediumSystemFont(26))
@@ -67,7 +67,8 @@ async function createWidget(items) {
         drawContext.setTextAlignedCenter()
 
         // Target Line
-        let target = 1 - targetValues[date.getMonth()] / getHeighestTargetValue()
+        const heighestTargetValue = getHeighestTargetValue()
+        let target = targetValues[date.getMonth()] / heighestTargetValue
 
         let targetPoint1 = new Point(50 , graphLow - (graphHeight * target))
         let targetPoint2 = new Point(670 , graphLow - (graphHeight * target))
@@ -75,7 +76,17 @@ async function createWidget(items) {
         drawLine(targetPoint1, targetPoint2, targetLineWeight, targetLineColor)
 
         for (let i = 0; i < json.values.length - 1; i++) {
+            // Summed line
+            let summedX1 = spaceBetweenPoints * i + 50
+            let summedY1 = json.values[i].sum_of_values / heighestTargetValue
 
+            let summedX2 = spaceBetweenPoints * (i + 1) + 50
+            let summedY2 = json.values[i + 1].sum_of_values / heighestTargetValue
+
+            let summedPoint1 = new Point(summedX1, graphLow - (graphHeight * summedY1))
+            let summedPoint2 = new Point(summedX2, graphLow - (graphHeight * summedY2))
+
+            drawLine(summedPoint1, summedPoint2, lineWeight, summedLineColor)
 
             // Current production value
             let x1 = spaceBetweenPoints * i + 50
@@ -87,7 +98,7 @@ async function createWidget(items) {
             let point1 = new Point(x1, graphLow - (graphHeight * y1))
             let point2 = new Point(x2, graphLow - (graphHeight * y2))
 
-            drawLine(point1, point2, lineWeight, accentColor1)
+            drawLine(point1, point2, lineWeight, currentLineColor)
         }
 
         return list;
@@ -103,7 +114,7 @@ function getHeighestTargetValue() {
         }
     })
 
-    return res
+    return 2 * res
 }
 
 async function getJWT() {
