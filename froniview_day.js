@@ -41,17 +41,12 @@ async function createWidget(items) {
         const list = new ListWidget()
         const date = new Date()
 
-        if (Device.isUsingDarkAppearance()) {
-            drawContext.setTextColor(Color.white())
-        }
-        else {
-            drawContext.setTextColor(Color.black())
-        }
 
         let gesKwh = Math.round(json.total / 10) / 100
         let reachedTarget = Math.round((json.total / targetValues[date.getMonth()]) * 100)
 
         drawContext.setFont(Font.mediumSystemFont(26))
+        drawContext.setTextColor(Color.gray())
         drawContext.drawText('☀️ Froniview'.toUpperCase()
             + ' | '
             + date.getDate() + ". "
@@ -96,8 +91,31 @@ async function createWidget(items) {
             drawLine(point1, point2, lineWeight, currentLineColor)
         }
 
+        let heighestValue = getHeighestValue(json.values)
+        drawContext.setTextColor(Color.orange())
+        drawContext.drawText( new String(
+                                    Math.round(heighestValue[0] / 10) / 100 + " kW"
+                                ).toString(), 
+                              new Point( 
+                                    spaceBetweenPoints * heighestValue[1] + 20, 
+                                    graphLow - (graphHeight * (heighestValue[0] / maxPower) + 30)  ) )
+
         return list;
     }
+}
+
+function getHeighestValue(values) {
+    let res = 0
+    let pos = 0
+
+    for (let i = 0; i < values.length; i++) {
+        if (values[i].value > res) {
+            res = values[i].value
+            pos = i
+        }
+    }
+
+    return [ res, pos]
 }
 
 async function getJWT() {
