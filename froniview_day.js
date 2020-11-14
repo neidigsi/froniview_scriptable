@@ -14,7 +14,6 @@ const widgetHeight = 338
 const widgetWidth = 720
 const graphLow = 280
 const graphHeight = 160
-const spaceBetweenPoints = 3.23
 
 let drawContext = new DrawContext();
 drawContext.size = new Size(widgetWidth, widgetHeight);
@@ -29,7 +28,7 @@ Script.setWidget(widget)
 Script.complete()
 
 async function createWidget(items) {
-    let req = new Request(getDayRequestUrl() + "&token=" + await getJWT())
+    let req = new Request(getDayRequestUrl(false) + "&token=" + await getJWT())
     let json = await req.loadJSON()
 
     if (json.total == undefined) {
@@ -40,7 +39,6 @@ async function createWidget(items) {
         const values = json.values
         const list = new ListWidget()
         const date = new Date()
-
 
         let gesKwh = Math.round(json.total / 10) / 100
         let reachedTarget = Math.round((json.total / targetValues[date.getMonth()]) * 100)
@@ -64,6 +62,8 @@ async function createWidget(items) {
         let targetPoint2 = new Point(670 , graphLow - (graphHeight * 0.5))
 
         drawLine(targetPoint1, targetPoint2, targetLineWeight, targetLineColor)
+
+        let spaceBetweenPoints = 620 / await getYesterdayValueNumber()
 
         for (let i = 0; i < json.values.length - 1; i++) {
             // Summed line
@@ -126,11 +126,33 @@ async function getJWT() {
     return json.token
 }
 
-function getDayRequestUrl() {
+function getDayRequestUrl(yesterday) {
     let date = new Date()
+
+    if (yesterday) {
+        date.setDate(date.getDate() - 1)
+    }
+
     let res = baseUrl + "/day?day=" + date.getDate() + "&month=" + (date.getMonth() + 1) + "&year=" + date.getFullYear()
 
     return res
+}
+
+async function getYesterdayValueNumber() {
+    let req = new Request(getDayRequestUrl(true) + "&token=" + await getJWT())
+    let json = await req.loadJSON()
+
+    if (json.values == undefined) {
+        return undefined
+    } else {
+        return json.values.length
+    }
+}
+
+function drawTextR(text, rect, color, font) {
+    drawContext.setFont(font)
+    drawContext.setTextColor(color)
+    drawContext.drawTextInRect(new String(text).toString(), rect)
 }
 
 function drawLine(point1, point2, width, color) {
